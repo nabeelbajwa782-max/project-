@@ -122,7 +122,7 @@ stateDiagram-v2
     Running --> Paused : User clicks Stop
     Paused --> Running : User clicks Start
     
-    Running --> SessionComplete : Timer reaches 00:00
+    Running --> SessionComplete : Timer finishes
     
     state SessionComplete {
         [*] --> SaveSession
