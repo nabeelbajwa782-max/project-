@@ -93,7 +93,49 @@ classDiagram
     PlannerFrame ..> "HTTP" TaskService : depends on
 """
 
+use_case_diagram = """
+graph LR
+    User([User])
+    
+    subgraph Weather Dashboard App
+        W[Search Weather Forecast]
+        T[Manage Study Tasks]
+        N[Write & Manage Notes]
+        F[Run Focus Timer]
+        A[View Productivity Analytics]
+    end
+    
+    User --> W
+    User --> T
+    User --> N
+    User --> F
+    User --> A
+"""
+
+activity_diagram = """
+stateDiagram-v2
+    [*] --> Idle
+    
+    Idle --> Running : User clicks Start
+    Running --> Running : Time ticking down
+    
+    Running --> Paused : User clicks Stop
+    Paused --> Running : User clicks Start
+    
+    Running --> SessionComplete : Timer reaches 00:00
+    
+    state SessionComplete {
+        [*] --> SaveSession
+        SaveSession --> ShowNotification
+        ShowNotification --> [*]
+    }
+    
+    SessionComplete --> Idle
+"""
+
 if __name__ == "__main__":
     download_png(component_diagram, "docs/uml/component/component_diagram.png")
     download_png(sequence_diagram, "docs/uml/sequence/sequence_diagram.png")
     download_png(class_diagram, "docs/uml/class/class_diagram.png")
+    download_png(use_case_diagram, "docs/uml/use_case/use_case_diagram.png")
+    download_png(activity_diagram, "docs/uml/activity/activity_diagram.png")

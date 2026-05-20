@@ -3,7 +3,7 @@ import os
 import sys
 
 # Add root project path to sys.path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from database.db_manager import init_db, get_connection
 
 class TestDatabase(unittest.TestCase):

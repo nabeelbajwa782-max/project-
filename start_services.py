@@ -6,9 +6,9 @@ def main():
     print("Starting Microservices...")
     
     # Run the services as background processes
-    weather_proc = subprocess.Popen([sys.executable, "services/weather_service.py"])
-    task_proc = subprocess.Popen([sys.executable, "services/task_service.py"])
-    analytics_proc = subprocess.Popen([sys.executable, "services/analytics_service.py"])
+    weather_proc = subprocess.Popen([sys.executable, "microservices/weather_service.py"])
+    task_proc = subprocess.Popen([sys.executable, "microservices/task_service.py"])
+    analytics_proc = subprocess.Popen([sys.executable, "microservices/analytics_service.py"])
     
     print("Services are running on ports 8001, 8002, 8003.")
     print("Press Ctrl+C to stop all services.")

@@ -4,8 +4,8 @@ import urllib.parse
 import os
 import sys
 
-# Add root project path to import database manager
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Add root project path to import database manager from src
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 from database.db_manager import get_connection
 
 class TaskHandler(BaseHTTPRequestHandler):

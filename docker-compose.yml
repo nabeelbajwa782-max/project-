@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  weather_service:
+    build: 
+      context: ./microservices
+      dockerfile: Dockerfile.weather
+    ports:
+      - "8001:8001"
+
+  task_service:
+    build: 
+      context: ./microservices
+      dockerfile: Dockerfile.task
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./src/database:/app/database
+
+  analytics_service:
+    build: 
+      context: ./microservices
+      dockerfile: Dockerfile.analytics
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./src/database:/app/database
