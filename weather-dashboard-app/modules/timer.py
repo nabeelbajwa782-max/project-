@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from database.db_manager import get_connection
+import urllib.request
+import json
 
 class TimerFrame(tk.Frame):
     def __init__(self, parent, controller):
@@ -63,19 +64,19 @@ class TimerFrame(tk.Frame):
             self.time_lbl.config(text="Time's Up!")
             messagebox.showinfo("Timer", "Session Completed!")
             
-            # Save session to DB if it was a Pomodoro
+            # Save session to Microservice if it was a Pomodoro
             if self.current_duration == 25:
                 self.save_session()
                 
     def save_session(self):
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO sessions (duration_minutes) VALUES (?)", (self.current_duration,))
-            conn.commit()
-            conn.close()
+            req = urllib.request.Request('http://localhost:8003/sessions', method='POST')
+            req.add_header('Content-Type', 'application/json')
+            data = json.dumps({"duration_minutes": self.current_duration}).encode()
+            with urllib.request.urlopen(req, data=data) as response:
+                pass
         except Exception as e:
-            print("Error saving session:", e)
+            print("Error saving session via microservice:", e)
             
     def start_timer(self):
         if not self.is_running:

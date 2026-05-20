@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from database.db_manager import get_connection
+import urllib.request
+import json
+import urllib.parse
 
 class NotesFrame(tk.Frame):
     def __init__(self, parent, controller):
@@ -59,16 +61,15 @@ class NotesFrame(tk.Frame):
         self.notes_listbox.delete(0, tk.END)
         self.notes_data = []
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, title, content FROM notes ORDER BY id DESC")
-            notes = cursor.fetchall()
+            req = urllib.request.Request('http://localhost:8002/notes')
+            with urllib.request.urlopen(req) as response:
+                notes = json.loads(response.read().decode())
+                
             for note in notes:
                 self.notes_data.append(note)
-                self.notes_listbox.insert(tk.END, note[1])
-            conn.close()
+                self.notes_listbox.insert(tk.END, note["title"])
         except Exception as e:
-            print("Error loading notes:", e)
+            print("Error loading notes from service:", e)
             
     def load_selected_note(self, event):
         selection = self.notes_listbox.curselection()
@@ -77,13 +78,13 @@ class NotesFrame(tk.Frame):
             
         index = selection[0]
         note = self.notes_data[index]
-        self.current_note_id = note[0]
+        self.current_note_id = note["id"]
         
         self.title_entry.delete(0, tk.END)
-        self.title_entry.insert(0, note[1])
+        self.title_entry.insert(0, note["title"])
         
         self.text_area.delete("1.0", tk.END)
-        self.text_area.insert(tk.END, note[2])
+        self.text_area.insert(tk.END, note["content"])
         
     def save_note(self):
         title = self.title_entry.get().strip()
@@ -94,35 +95,33 @@ class NotesFrame(tk.Frame):
             return
             
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            if self.current_note_id is None:
-                cursor.execute("INSERT INTO notes (title, content) VALUES (?, ?)", (title, content))
-            else:
-                cursor.execute("UPDATE notes SET title=?, content=? WHERE id=?", (title, content, self.current_note_id))
-            conn.commit()
-            conn.close()
+            data = {"title": title, "content": content}
+            if self.current_note_id is not None:
+                data["id"] = self.current_note_id
+                
+            req = urllib.request.Request('http://localhost:8002/notes', method='POST')
+            req.add_header('Content-Type', 'application/json')
+            with urllib.request.urlopen(req, data=json.dumps(data).encode()) as response:
+                pass
             
             messagebox.showinfo("Success", "Note saved successfully.")
             self.load_notes_list()
         except Exception as e:
-            messagebox.showerror("Database Error", str(e))
+            messagebox.showerror("Microservice Error", str(e))
             
     def delete_note(self):
         if self.current_note_id is None:
             return
             
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM notes WHERE id=?", (self.current_note_id,))
-            conn.commit()
-            conn.close()
+            req = urllib.request.Request(f'http://localhost:8002/notes?id={self.current_note_id}', method='DELETE')
+            with urllib.request.urlopen(req) as response:
+                pass
             
             self.clear_text()
             self.load_notes_list()
         except Exception as e:
-            messagebox.showerror("Database Error", str(e))
+            messagebox.showerror("Microservice Error", str(e))
             
     def on_show(self):
         self.load_notes_list()

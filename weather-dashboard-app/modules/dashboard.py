@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import subprocess
+import urllib.request
 import json
 import urllib.parse
 
@@ -59,13 +59,14 @@ class DashboardFrame(tk.Frame):
             
         self.search_weather()
         
-    def _fetch_json(self, url):
-        # Using curl via subprocess to bypass broken urllib/requests in user's environment
+    def _fetch_from_service(self, city):
         try:
-            result = subprocess.run(['curl', '-s', url], capture_output=True, text=True, check=True)
-            return json.loads(result.stdout)
+            encoded_city = urllib.parse.quote(city)
+            req = urllib.request.Request(f"http://localhost:8001/weather?city={encoded_city}")
+            with urllib.request.urlopen(req) as response:
+                return json.loads(response.read().decode())
         except Exception as e:
-            print("cURL error:", e)
+            print("Microservice error:", e)
             return None
         
     def search_weather(self):
@@ -77,56 +78,34 @@ class DashboardFrame(tk.Frame):
         self.city_name_lbl.config(text=f"Searching for {city}...")
         self.temp_lbl.config(text="-- °C")
         
-        try:
-            # 1. Geocoding
-            encoded_city = urllib.parse.quote(city)
-            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_city}&count=1"
+        data = self._fetch_from_service(city)
+        if not data or "error" in data:
+            self.city_name_lbl.config(text="City not found or service down.")
+            return
             
-            geo_data = self._fetch_json(geo_url)
-                
-            if not geo_data or "results" not in geo_data or len(geo_data["results"]) == 0:
-                self.city_name_lbl.config(text="City not found")
-                return
-                
-            result = geo_data["results"][0]
-            lat = result["latitude"]
-            lon = result["longitude"]
-            resolved_name = f"{result['name']}, {result.get('country', '')}"
-            self.city_name_lbl.config(text=resolved_name)
+        self.city_name_lbl.config(text=data["city"])
+        
+        current = data.get("current", {})
+        temp = current.get("temperature_2m", "--")
+        wind = current.get("wind_speed_10m", "--")
+        humidity = current.get("relative_humidity_2m", "--")
+        
+        self.temp_lbl.config(text=f"{temp} °C")
+        self.details_lbl.config(text=f"Wind: {wind} km/h | Humidity: {humidity} %")
+        
+        daily = data.get("daily", {})
+        times = daily.get("time", [])
+        t_max = daily.get("temperature_2m_max", [])
+        t_min = daily.get("temperature_2m_min", [])
+        
+        for i in range(min(7, len(times))):
+            date_str = times[i][5:]
+            max_t = t_max[i]
+            min_t = t_min[i]
             
-            # 2. Weather Data
-            weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto"
-            
-            weather_data = self._fetch_json(weather_url)
-            if not weather_data:
-                self.city_name_lbl.config(text="Error parsing weather data")
-                return
-                
-            current = weather_data.get("current", {})
-            temp = current.get("temperature_2m", "--")
-            wind = current.get("wind_speed_10m", "--")
-            humidity = current.get("relative_humidity_2m", "--")
-            
-            self.temp_lbl.config(text=f"{temp} °C")
-            self.details_lbl.config(text=f"Wind: {wind} km/h | Humidity: {humidity} %")
-            
-            daily = weather_data.get("daily", {})
-            times = daily.get("time", [])
-            t_max = daily.get("temperature_2m_max", [])
-            t_min = daily.get("temperature_2m_min", [])
-            
-            for i in range(min(7, len(times))):
-                date_str = times[i][5:] # Skip year, show MM-DD
-                max_t = t_max[i]
-                min_t = t_min[i]
-                
-                day_lbl, t_lbl = self.forecast_widgets[i]
-                day_lbl.config(text=date_str)
-                t_lbl.config(text=f"{max_t}° / {min_t}°")
-                
-        except Exception as e:
-            self.city_name_lbl.config(text="Error fetching data")
-            print("Weather error:", e)
+            day_lbl, t_lbl = self.forecast_widgets[i]
+            day_lbl.config(text=date_str)
+            t_lbl.config(text=f"{max_t}° / {min_t}°")
 
     def on_show(self):
         pass

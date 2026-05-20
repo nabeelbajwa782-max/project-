@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from database.db_manager import get_connection
+import urllib.request
+import json
+import urllib.parse
 
 class PlannerFrame(tk.Frame):
     def __init__(self, parent, controller):
@@ -45,15 +47,15 @@ class PlannerFrame(tk.Frame):
             return
             
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO tasks (title, priority) VALUES (?, ?)", (title, priority))
-            conn.commit()
-            conn.close()
+            req = urllib.request.Request('http://localhost:8002/tasks', method='POST')
+            req.add_header('Content-Type', 'application/json')
+            data = json.dumps({"title": title, "priority": priority}).encode()
+            with urllib.request.urlopen(req, data=data) as response:
+                pass
             self.task_entry.delete(0, tk.END)
             self.load_tasks()
         except Exception as e:
-            messagebox.showerror("Database Error", str(e))
+            messagebox.showerror("Microservice Error", str(e))
             
     def delete_task(self):
         selection = self.task_listbox.curselection()
@@ -62,35 +64,30 @@ class PlannerFrame(tk.Frame):
             
         index = selection[0]
         task_str = self.task_listbox.get(index)
-        
-        # Extact ID or just use matching title
-        # Since listbox stores string, let's keep it simple: we can map id by storing it in a dictionary, but for now we delete by title
         title = task_str.split("] ")[1]
         
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM tasks WHERE title=?", (title,))
-            conn.commit()
-            conn.close()
+            encoded_title = urllib.parse.quote(title)
+            req = urllib.request.Request(f'http://localhost:8002/tasks?title={encoded_title}', method='DELETE')
+            with urllib.request.urlopen(req) as response:
+                pass
             self.load_tasks()
         except Exception as e:
-            messagebox.showerror("Database Error", str(e))
+            messagebox.showerror("Microservice Error", str(e))
             
     def load_tasks(self):
         self.task_listbox.delete(0, tk.END)
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT title, priority FROM tasks ORDER BY priority ASC")
-            tasks = cursor.fetchall()
+            req = urllib.request.Request('http://localhost:8002/tasks')
+            with urllib.request.urlopen(req) as response:
+                tasks = json.loads(response.read().decode())
+                
             priority_names = {1: "High", 2: "Medium", 3: "Low"}
             for task in tasks:
-                p_name = priority_names.get(task[1], "Low")
-                self.task_listbox.insert(tk.END, f"[{p_name}] {task[0]}")
-            conn.close()
+                p_name = priority_names.get(task["priority"], "Low")
+                self.task_listbox.insert(tk.END, f"[{p_name}] {task['title']}")
         except Exception as e:
-            print("Error loading tasks:", e)
+            print("Error loading tasks from microservice:", e)
 
     def on_show(self):
         self.load_tasks()
