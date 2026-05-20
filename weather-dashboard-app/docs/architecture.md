@@ -85,3 +85,38 @@ classDiagram
     DashboardFrame ..> "HTTP" TaskService : depends on
     PlannerFrame ..> "HTTP" TaskService : depends on
 ```
+
+## 4. Use Case Diagram
+`mermaid
+graph LR
+    User([User])
+    subgraph Weather Dashboard App
+        W[Search Weather Forecast]
+        T[Manage Study Tasks]
+        N[Write & Manage Notes]
+        F[Run Focus Timer]
+        A[View Productivity Analytics]
+    end
+    User --> W
+    User --> T
+    User --> N
+    User --> F
+    User --> A
+`
+
+## 5. Activity Diagram
+`mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running : User clicks Start
+    Running --> Running : Time ticking down
+    Running --> Paused : User clicks Stop
+    Paused --> Running : User clicks Start
+    Running --> SessionComplete : Timer reaches 00:00
+    state SessionComplete {
+        [*] --> SaveSession
+        SaveSession --> ShowNotification
+        ShowNotification --> [*]
+    }
+    SessionComplete --> Idle
+`

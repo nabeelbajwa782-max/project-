@@ -1,0 +1,7 @@
+Error 400: SyntaxError: Parse error on line 10:
+...e : Timer reaches 00:00        state S
+-----------------------^
+Expecting 'SPACE', 'NL', 'HIDE_EMPTY', 'scale', 'COMPOSIT_STATE', 'STRUCT_STOP', 'STATE_DESCR', 'ID', 'FORK', 'JOIN', 'CHOICE', 'CONCURRENT', 'note', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'CLICK', 'classDef', 'style', 'class', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'EDGE_STATE', got 'DESCR'
+Error: Syntax error in graph
+    at Worker.convert (file:///usr/local/kroki/src/worker.js:44:15)
+    at async file:///usr/local/kroki/src/index.js:31:28
